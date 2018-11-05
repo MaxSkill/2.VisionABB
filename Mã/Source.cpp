@@ -78,7 +78,7 @@ bool blResut = false;
 bool blRecord = false;
 String textIntput = "";
 Mat frCap;
-VideoCapture cap(0);
+
 enum nbtnRecord
 {
 	Rec,
@@ -323,7 +323,7 @@ void fResult(Mat frame)
 
 }
 #pragma endregion 
-double cycleTrigger=0;
+double cycleTrigger = 0;
 #pragma region VISION
 #pragma region Variable
 vector<vector<cv::Point> > contours;
@@ -338,16 +338,16 @@ Mat frFilter;
 Mat frFilter1;
 Mat frContour1;
 Mat input;
-int  szRectW=1;
-int  szRectH=20;
-int szKernelW=6;
-int szKernelH=6; 
-int szBlurW=16;
-int szBlurH=32;
-int szThreshW=180;
-int szThreshH=255;
+int  szRectW = 1;
+int  szRectH = 50;
+int szKernelW = 30;
+int szKernelH = 36;
+int szBlurW = 10;
+int szBlurH =5;
+int szThreshW = 180;
+int szThreshH = 255;
 float areaTriger = 0;
-bool ck1=true;
+bool ck1 = true;
 bool ck2 = true;
 bool ck3 = true;
 Mat matTrigger;
@@ -358,15 +358,15 @@ class Result
 {
 public: int x = 0, y = 0, del = 0;
 public: bool rev;
-public:	void list(int _x , int _y , int _del ,bool _rev) {
-		
-	x = _x;
-	y = _y;
-	del = _del;
-	rev = _rev;
-	}
+public:	void list(int _x, int _y, int _del, bool _rev) {
+
+			x = _x;
+			y = _y;
+			del = _del;
+			rev = _rev;
+}
 };
-vector<Result> listResult ;
+vector<Result> listResult;
 cv::Size convertSZ(int W, int H)
 {
 	cv::Size sz = cv::Size(W, H);
@@ -688,8 +688,8 @@ public:
 			areaTriger = countNonZero(in);
 			//out = in;
 			//areaTriger = countNonZero(in);
-			
-			
+
+
 		}
 	}
 };
@@ -760,7 +760,7 @@ Mat Canny(Mat inPut, cv::Size szCanny, bool ck)
 }
 #pragma endregion
 #pragma region FILTERs
-Mat Filter(Mat input,int  szRectW, int  szRectH, int szKernelW, int szKernelH, int szBlurW, int szBlurH, int szThreshW, int szThreshH, int szClose_x, int szClose_y, bool ck1, bool ck2, bool ck3, bool ck4)
+Mat Filter(Mat input, int  szRectW, int  szRectH, int szKernelW, int szKernelH, int szBlurW, int szBlurH, int szThreshW, int szThreshH, int szClose_x, int szClose_y, bool ck1, bool ck2, bool ck3, bool ck4)
 {
 	Mat hsv = Mat(); Mat hue = Mat();
 	hue = NULL;
@@ -827,7 +827,6 @@ Mat FindSampling(String path)
 
 Mat FindContours(Mat input, Mat raw, double minArea, double maxArea, int szSampling, int xCrop, int yCrop)
 {
-	
 	vector < string >;
 	cv::destroyAllWindows();
 	vector<Vec4i> hierarchy;
@@ -1178,26 +1177,26 @@ bool Trigger(Mat inPut, Mat raw, double minArea)
 void fcTrigger(Mat in)
 {
 	int64 t0 = cv::getTickCount();
-	
-	
-	matTrigger=	Filter2(in, szRectW, szRectH, szKernelW, szKernelH, szBlurW, szBlurH, szThreshW, szThreshH, ck1, ck2, ck3);
-	Mat  out(matTrigger, cv::Rect(10, 10,
-		200, 200));
+
+
+	matTrigger = Filter2(in, szRectW, szRectH, szKernelW, szKernelH, szBlurW, szBlurH, szThreshW, szThreshH, ck1, ck2, ck3);
+	//Mat  out(matTrigger, cv::Rect(10, 10,
+	//	200, 200));
 	//areaTriger = countNonZero(in);//cv::Mat::zeros(matTrigger.size(), CV_8UC3);
-	areaTriger = countNonZero(out);
+	areaTriger = countNonZero(matTrigger);
 	//cv::parallel_for_(cv::Range(0, 8), Parallel_process(matTrigger, out, 5, 8));
-	
+
 	int64 t1 = cv::getTickCount();
 	cycleTrigger = (t1 - t0) / cv::getTickFrequency();
-	
+
 }
 void pTrigger(Mat in)
 {
-	thread process1(fcTrigger,in);
+	thread process1(fcTrigger, in);
 	if (process1.joinable())
 	{
 		process1.join();
-		cv::destroyAllWindows();
+		//cv::destroyAllWindows();
 		cycleTrigger = cycleTrigger * 1000;
 		cv::imshow("OUT", matTrigger);
 		std::cout << "AREA: " << areaTriger << std::endl;
@@ -1218,22 +1217,35 @@ void on_mouse_click(int event, int x, int y, int, void*)
 }
 Mat  image;
 bool blLoad = false;
+VideoCapture cap(1);
 int main(int argc, const char *argv[])
 {
-	for (int i = 0; i < 100000; i++)
+	cap.set(CV_CAP_PROP_SETTINGS, 1);
+	int i = 0;
+	/*while (true)
 	{
-		input = cv::imread("Pic66.png", COLOR_BGR2GRAY);
-		pTrigger(input);
-		cv::waitKey(2);
-	}
-	cv::waitKey(0);
-	/*Result Result();
+		cap >> frame;
+
+		if (frame.empty())
+			break;
+		
+		
+	//	equalizeHist(frame, gray_image);
+		cv::imshow("CCD0", frame);
+		Mat gray_image;
+		cvtColor(frame, gray_image, CV_BGR2GRAY);
+		//string path = "pic\\" + to_string(1) + ".png";
+		////input = cv::imread(path, COLOR_BGR2GRAY);
+		//pTrigger(input);
+		//if (i>20)
+			//imwrite("save\\" + to_string(i) + ".jpg", gray_image);
+		i++;
+		cv::waitKey(1);
+	}*/
 	GetDesktopResolution(with, height);
 	const cv::String windows[] = { wMain, wFILTER, WINDOW3_NAME, WINDOW4_NAME };
-
 	moveWindow(wMain, 0, 0);
 	image = cv::Mat(height, with, CV_8UC3);
-
 	cvNamedWindow(wMain, CV_WINDOW_NORMAL);
 	cvSetWindowProperty(wMain, CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
 	cvui::init(wMain);
@@ -1242,7 +1254,6 @@ int main(int argc, const char *argv[])
 	frCap = cv::Mat(3 * with / 4, height, CV_8UC3);
 	while (true) {
 		frFilter = cv::Scalar(255, 255, 255);
-
 		if (blRecord == true)
 		{
 			cap >> frame;
@@ -1260,41 +1271,35 @@ int main(int argc, const char *argv[])
 		cvui::context(wMain);
 		cvui::image(image, 0, 0, frCap);
 		fResult(image);
-
-
 		if (blRecord == true)
-			if (cvui::button(image, 3 * with / 8, 9 * height / 10, 80, 30, "Stop")) {
+		if (cvui::button(image, 3 * with / 8, 9 * height / 10, 80, 30, "Stop")) {
 			blRecord = false;
 			goto Y;
-			}
+		}
 		if (blRecord == false)
-			if (cvui::button(image, 3 * with / 8, 9 * height / 10, 80, 30, "Rec")) {
-
+		if (cvui::button(image, 3 * with / 8, 9 * height / 10, 80, 30, "Rec")) {
 			blRecord = true;
-			}
+		}
 	Y:if (cvui::button(image, with - 20, 0, 20, 20, "X"))
 	{
-		cv::destroyAllWindows();
-		cv::waitKey(1);
-		break;
+		  cv::destroyAllWindows();
+		  cv::waitKey(1);
+		  break;
 	}
 	  if (cvui::button(image, 110, 0, 100, 30, "OFFLINE")) {
-
 	  }
 	  if (blRun == true)
-		  if (cvui::button(image, 0, 0, 100, 30, "RUN")) {
+	  if (cvui::button(image, 0, 0, 100, 30, "RUN")) {
 		  blRun = false;
 		  goto X;
-		  }
+	  }
 	  if (blRun == false)
-		  if (cvui::button(image, 0, 0, 100, 30, "EDITOR")) {
-
+	  if (cvui::button(image, 0, 0, 100, 30, "EDITOR")) {
 		  blRun = true;
-		  }
+	  }
   X:
 	  if (blRun == false)
 	  {
-
 		  if (cvui::button(image, 0, 40, 100, 30, "CCD SETTING")) {
 			  cap.set(CV_CAP_PROP_SETTINGS, 1);
 		  }
@@ -1311,7 +1316,6 @@ int main(int argc, const char *argv[])
 			  blCom = !blCom;
 		  }
 		  if (cvui::button(image, 0, 160, 100, 30, "RESULT")) {
-
 		  }
 		  fTool(image);
 		  if (blCom == true)fComunication(image, 100, 130, 300, 180);
@@ -1323,126 +1327,135 @@ int main(int argc, const char *argv[])
 		  }
 	  }
 	  //cvui::image(image, 50, 50, frFilter);
-
 	  cvui::update(wMain);
-
 	  cv::imshow(wMain, image);
-	  //cvui::update(wFILTER);
-	  //cv::imshow(wFILTER, frFilter);
+	  cv::waitKey(1);
+	}
+	/*
+ 
+	for (int i = 1; i < 33; i++)
+	{
+		string path = "pic\\" + to_string(i) + ".png";
+		input = cv::imread(path, COLOR_BGR2GRAY);
+		pTrigger(input);
+		cv::waitKey(200);
+		if (i == 32)i = 0;
+	}*/
+	cv::waitKey(0);
+	/*Result Result();
+	
+	//cvui::update(wFILTER);
+	//cv::imshow(wFILTER, frFilter);
+	/*grBlur.begin(frFilter);
+	if (!grBlur.isMinimized()) {
+	cvui::text("Clear Blob", 0.5, 0x148ae3);
+	cvui::checkbox("view", &ck1);//, 0xff0000);
+	/*cvui::text(frFilter, 10, 10, "Clear Blob", 0.5, 0x148ae3);
+	cvui::checkbox(frFilter, 140, 10, "view", &ck1);//, 0xff0000);
+	cvui::text(frFilter, 20, 40, "Size Rec", 0.4, 0x8ccbfb);
+	cvui::counter(frFilter, 90, 40, &szRectX,1, "%.1f");
+	cvui::counter(frFilter, 90, 65, &szRectY, 1, "%.1f");
+	///+60
+	cvui::text(frFilter, 20, 100, "Size Kenel", 0.4, 0x8ccbfb);
+	cvui::counter(frFilter, 90, 100, &szRectX, 1, "%.1f");
+	cvui::counter(frFilter, 90, 125, &szRectY, 1, "%.1f");
+	///+60
+	cvui::text(frFilter, 20, 160, "Size Blur", 0.4, 0x8ccbfb);
+	cvui::counter(frFilter, 90, 160, &szRectX, 1, "%.1f");
+	cvui::counter(frFilter, 90, 185, &szRectY, 1, "%.1f");
+	grBlur.end();
+	//cvui::update(wFILTER);
+	}*/
 
-	  /*grBlur.begin(frFilter);
-	  if (!grBlur.isMinimized()) {
-	  cvui::text("Clear Blob", 0.5, 0x148ae3);
-	  cvui::checkbox("view", &ck1);//, 0xff0000);
-	  /*cvui::text(frFilter, 10, 10, "Clear Blob", 0.5, 0x148ae3);
-	  cvui::checkbox(frFilter, 140, 10, "view", &ck1);//, 0xff0000);
-	  cvui::text(frFilter, 20, 40, "Size Rec", 0.4, 0x8ccbfb);
-	  cvui::counter(frFilter, 90, 40, &szRectX,1, "%.1f");
-	  cvui::counter(frFilter, 90, 65, &szRectY, 1, "%.1f");
-	  ///+60
-	  cvui::text(frFilter, 20, 100, "Size Kenel", 0.4, 0x8ccbfb);
-	  cvui::counter(frFilter, 90, 100, &szRectX, 1, "%.1f");
-	  cvui::counter(frFilter, 90, 125, &szRectY, 1, "%.1f");
-	  ///+60
-	  cvui::text(frFilter, 20, 160, "Size Blur", 0.4, 0x8ccbfb);
-	  cvui::counter(frFilter, 90, 160, &szRectX, 1, "%.1f");
-	  cvui::counter(frFilter, 90, 185, &szRectY, 1, "%.1f");
-	  grBlur.end();
-	  //cvui::update(wFILTER);
-	  }*/
+	/*	cvui::beginColumn(frFilter, 20, 240, -1, -1, 6);
+	cvui::text(frFilter, 10, 220, "Binary", 0.5, 0x148ae3);
+	//cvui::trackbar(width, &doubleValue3, 0., 4., 2, "%.2Lf", cvui::TRACKBAR_DISCRETE, 0.25);
+	cvui::trackbar(180, &typeBinary, 1., 4., 2, "%.0Lf", cvui::TRACKBAR_DISCRETE | cvui::TRACKBAR_HIDE_SEGMENT_LABELS, 1.0);
+	cvui::endColumn();
+	//cvui::trackbar(frFilter, 20, 230, 180, &szRectY, 1., 4., 2, "%.0f", cvui::TRACKBAR_DISCRETE, 1);
+	cvui::update(wFILTER);*/
+	//cv::imshow(wFILTER, frFilter);
 
-	  /*	cvui::beginColumn(frFilter, 20, 240, -1, -1, 6);
-	  cvui::text(frFilter, 10, 220, "Binary", 0.5, 0x148ae3);
-	  //cvui::trackbar(width, &doubleValue3, 0., 4., 2, "%.2Lf", cvui::TRACKBAR_DISCRETE, 0.25);
-	  cvui::trackbar(180, &typeBinary, 1., 4., 2, "%.0Lf", cvui::TRACKBAR_DISCRETE | cvui::TRACKBAR_HIDE_SEGMENT_LABELS, 1.0);
-	  cvui::endColumn();
-	  //cvui::trackbar(frFilter, 20, 230, 180, &szRectY, 1., 4., 2, "%.0f", cvui::TRACKBAR_DISCRETE, 1);
-	  cvui::update(wFILTER);*/
-	  //cv::imshow(wFILTER, frFilter);
+	//fFilter(wFILTER);
+	//int w = 1200; int h = 800;
+	//cv::resize(image, image, cv::Size(w, h), 0, 0, CV_INTER_LINEAR);
+	/*	for (int button = cvui::LEFT_BUTTON; button <= cvui::RIGHT_BUTTON; button++) {
+	// Get the anchor, ROI and color associated with the mouse button
+	cv::Point& anchor = anchors[button];
+	cv::Rect& roi = rois[button];
+	unsigned int color = colors[button];
+	// The function "bool cvui::mouse(int button, int query)" allows you to query a particular mouse button for events.
+	// E.g. cvui::mouse(cvui::RIGHT_BUTTON, cvui::DOWN)
+	//
+	// Available queries:
+	//	- cvui::DOWN: mouse button was pressed. cvui::mouse() returns true for single frame only.
+	//	- cvui::UP: mouse button was released. cvui::mouse() returns true for single frame only.
+	//	- cvui::CLICK: mouse button was clicked (went down then up, no matter the amount of frames in between). cvui::mouse() returns true for single frame only.
+	//	- cvui::IS_DOWN: mouse button is currently pressed. cvui::mouse() returns true for as long as the button is down/pressed.
+	// Did the mouse button go down?
+	if (cvui::mouse(button, cvui::DOWN)) {
+	// Position the anchor at the mouse pointer.
+	anchor.x = cvui::mouse().x;
+	anchor.y = cvui::mouse().y;
+	}
+	// Is any mouse button down (pressed)?
+	if (cvui::mouse(button, cvui::IS_DOWN)) {
+	// Adjust roi dimensions according to mouse pointer
+	int width = cvui::mouse().x - anchor.x;
+	int height = cvui::mouse().y - anchor.y;
+	roi.x = width < 0 ? anchor.x + width : anchor.x;
+	roi.y = height < 0 ? anchor.y + height : anchor.y;
+	roi.width = std::abs(width);
+	roi.height = std::abs(height);
+	// Show the roi coordinates and size
+	cvui::printf(image, roi.x + 5, roi.y + 5, 0.3, color, "(%d,%d)", roi.x, roi.y);
+	cvui::printf(image, cvui::mouse().x + 5, cvui::mouse().y + 5, 0.3, color, "w:%d, h:%d", roi.width, roi.height);
+	}
+	// Ensure ROI is within bounds
+	roi.x = roi.x < 0 ? 0 : roi.x;
+	roi.y = roi.y < 0 ? 0 : roi.y;
+	roi.width = roi.x + roi.width > image.cols ? roi.width + image.cols - (roi.x + roi.width) : roi.width;
+	roi.height = roi.y + roi.height > image.rows ? roi.height + image.rows - (roi.y + roi.height) : roi.height;
+	// If the ROI is valid, render it in the frame and show in a window.
+	if (roi.area() > 0) {
+	cvui::rect(image, roi.x, roi.y, roi.width, roi.height, color);
+	cvui::printf(image, roi.x + 5, roi.y - 10, 0.3, color, "Area %d", button);
+	cv::imshow("ROI button" + std::to_string(button), frame(roi));
+	}
+	}
+	cvui::update();
+	cv::imshow(WINDOW1_NAME, image);
+	if (selectObject && selection.width > 0 && selection.height > 0)
+	{
+	Mat roi(image, selection);
+	bitwise_not(roi, roi);
+	printf("%d %d %d %d\n", selection.x, selection.y, selection.width, selection.height);
+	}
 
-	  //fFilter(wFILTER);
-	  //int w = 1200; int h = 800;
-	  //cv::resize(image, image, cv::Size(w, h), 0, 0, CV_INTER_LINEAR);
-	  /*	for (int button = cvui::LEFT_BUTTON; button <= cvui::RIGHT_BUTTON; button++) {
-	  // Get the anchor, ROI and color associated with the mouse button
-	  cv::Point& anchor = anchors[button];
-	  cv::Rect& roi = rois[button];
-	  unsigned int color = colors[button];
-	  // The function "bool cvui::mouse(int button, int query)" allows you to query a particular mouse button for events.
-	  // E.g. cvui::mouse(cvui::RIGHT_BUTTON, cvui::DOWN)
-	  //
-	  // Available queries:
-	  //	- cvui::DOWN: mouse button was pressed. cvui::mouse() returns true for single frame only.
-	  //	- cvui::UP: mouse button was released. cvui::mouse() returns true for single frame only.
-	  //	- cvui::CLICK: mouse button was clicked (went down then up, no matter the amount of frames in between). cvui::mouse() returns true for single frame only.
-	  //	- cvui::IS_DOWN: mouse button is currently pressed. cvui::mouse() returns true for as long as the button is down/pressed.
-	  // Did the mouse button go down?
-	  if (cvui::mouse(button, cvui::DOWN)) {
-	  // Position the anchor at the mouse pointer.
-	  anchor.x = cvui::mouse().x;
-	  anchor.y = cvui::mouse().y;
-	  }
-	  // Is any mouse button down (pressed)?
-	  if (cvui::mouse(button, cvui::IS_DOWN)) {
-	  // Adjust roi dimensions according to mouse pointer
-	  int width = cvui::mouse().x - anchor.x;
-	  int height = cvui::mouse().y - anchor.y;
-	  roi.x = width < 0 ? anchor.x + width : anchor.x;
-	  roi.y = height < 0 ? anchor.y + height : anchor.y;
-	  roi.width = std::abs(width);
-	  roi.height = std::abs(height);
-	  // Show the roi coordinates and size
-	  cvui::printf(image, roi.x + 5, roi.y + 5, 0.3, color, "(%d,%d)", roi.x, roi.y);
-	  cvui::printf(image, cvui::mouse().x + 5, cvui::mouse().y + 5, 0.3, color, "w:%d, h:%d", roi.width, roi.height);
-	  }
-	  // Ensure ROI is within bounds
-	  roi.x = roi.x < 0 ? 0 : roi.x;
-	  roi.y = roi.y < 0 ? 0 : roi.y;
-	  roi.width = roi.x + roi.width > image.cols ? roi.width + image.cols - (roi.x + roi.width) : roi.width;
-	  roi.height = roi.y + roi.height > image.rows ? roi.height + image.rows - (roi.y + roi.height) : roi.height;
-	  // If the ROI is valid, render it in the frame and show in a window.
-	  if (roi.area() > 0) {
-	  cvui::rect(image, roi.x, roi.y, roi.width, roi.height, color);
-	  cvui::printf(image, roi.x + 5, roi.y - 10, 0.3, color, "Area %d", button);
-	  cv::imshow("ROI button" + std::to_string(button), frame(roi));
-	  }
-	  }
-	  cvui::update();
-	  cv::imshow(WINDOW1_NAME, image);
-	  if (selectObject && selection.width > 0 && selection.height > 0)
-	  {
-	  Mat roi(image, selection);
-	  bitwise_not(roi, roi);
-	  printf("%d %d %d %d\n", selection.x, selection.y, selection.width, selection.height);
-	  }
-	  
-	  if (selection.width > 0 && selection.height > 0)
-		  rectangle(image, selection, cv::Scalar(255, 0, 0));
-	  // The functions below will update a window and show them using cv::imshow().
-	  // In that case, you must call the pair cvui::context(NAME)/cvui::update(NAME)
-	  // to render components and update the window.
-	  //	window(WINDOW1_NAME);
-	  //window(WINDOW2_NAME);
-	  //window(WINDOW3_NAME);
-
-	  // The function below will do the same as the funcitons above, however it will
-	  // use cvui::imshow() (cvui's version of cv::imshow()), which will automatically
-	  // call cvui::update() for us.
-	  //compact(WINDOW4_NAME);
-
-	  // Check if ESC key was pressed
-	  char c;
-	  c = waitKey(30);
-	  if (c != -1)
-	  {
-		  textIntput += c;
-		  std::cout << textIntput;
-	  }
-	  if (cv::waitKey(30) == 27) {
-
-		  break;
-	  }
-	  //std::cout << s;
+	if (selection.width > 0 && selection.height > 0)
+	rectangle(image, selection, cv::Scalar(255, 0, 0));
+	// The functions below will update a window and show them using cv::imshow().
+	// In that case, you must call the pair cvui::context(NAME)/cvui::update(NAME)
+	// to render components and update the window.
+	//	window(WINDOW1_NAME);
+	//window(WINDOW2_NAME);
+	//window(WINDOW3_NAME);
+	// The function below will do the same as the funcitons above, however it will
+	// use cvui::imshow() (cvui's version of cv::imshow()), which will automatically
+	// call cvui::update() for us.
+	//compact(WINDOW4_NAME);
+	// Check if ESC key was pressed
+	char c;
+	c = waitKey(30);
+	if (c != -1)
+	{
+	textIntput += c;
+	std::cout << textIntput;
+	}
+	if (cv::waitKey(30) == 27) {
+	break;
+	}
+	//std::cout << s;
 	}
 	*/
 	return 0;
