@@ -40,7 +40,7 @@ bool ck11 = false;
 bool ck12 = false;
 bool ck21 = false;
 bool ck22 = false;
-bool c31 = false;
+bool ck31 = false;
 bool ck32 = false;
 bool ck41 = false;
 bool ck42 = false;
@@ -82,23 +82,40 @@ bool blTool = false;
 bool blCom = false;
 bool blResut = false;
 bool blRecord = false;
-int  szRectW = 1;
-int  szRectH = 50;
-int szKernelW = 30;
-int szKernelH = 36;
-int szBlurW = 10;
-int szBlurH = 5;
+double  szRectW = 1;
+double  szRectH = 50;
+double szKernelW = 3;
+double szKernelH = 20;
+double szBlurW =9;
+double szBlurH = 20;
 double szThreshW = 180;
 double szThreshH = 255;
-int szCloseW =3;
-int szCloseH = 3;
+int szCloseW = 15;
+int szCloseH = 15;
 String textIntput = "";
 Mat frCap;
 cv::Rect recArea;
+cv::Rect recArea2;
 cv::Rect recTrigger;
+cv::Rect recTrigger2;
 #pragma endregion 
 bool blCropArea = false;
 bool blCropTrigger = false;
+cv::Size szCCD;
+cv::Size szPic;
+VideoCapture cap(1);
+Mat matClear;
+Mat matBinary;
+Mat matCanny;
+void ScanRecTrigger()
+{
+	double	szResizeX = (double)szCCD.width / szPic.width;
+	double	szResizeY = (double)szCCD.height / szPic.height;
+	recTrigger2.width = (int)(recTrigger.width * szResizeX);
+	recTrigger2.x = (int)(recTrigger.x * szResizeX);
+	recTrigger2.height = (int)(recTrigger.height * szResizeY);
+	recTrigger2.y = (int)(recTrigger.y * szResizeY);
+}
 void showCrop(Mat image)
 {
 
@@ -106,56 +123,61 @@ void showCrop(Mat image)
 	if (blCropArea == false)
 	if (recArea.area() > 0) {
 		cvui::rect(image, recArea.x, recArea.y, recArea.width, recArea.height, color);
-		cvui::printf(image, recArea.x + 5, recArea.y - 10, 0.3, color, "Area ",0);
+		cvui::printf(image, recArea.x + 5, recArea.y - 10, 0.3, color, "Area ", 0);
 	}
-    color = colors[2];
-	if (blCropTrigger==false)
+	color = colors[2];
+	if (blCropTrigger == false)
 	if (recTrigger.area() > 0) {
 		cvui::rect(image, recTrigger.x, recTrigger.y, recTrigger.width, recTrigger.height, color);
-		cvui::printf(image, recTrigger.x + 5, recTrigger.y - 10, 0.3, color, "Trigger ",2);
+		cvui::printf(image, recTrigger.x + 5, recTrigger.y - 10, 0.3, color, "Trigger ", 2);
 	}
 }
 void Crop(Mat image, int button)
 {
-	
-		
-		cv::Point& anchor = anchors[button];
-		cv::Rect& roi = rois[button];
-		unsigned int color = colors[button];
-		if (cvui::mouse(0, cvui::DOWN)) {
-			anchor.x = cvui::mouse().x;
-			anchor.y = cvui::mouse().y;
-		}
-		// Is any mouse button down (pressed)?
-		if (cvui::mouse(0, cvui::IS_DOWN)) {
-			// Adjust roi dimensions according to mouse pointer
-			int width = cvui::mouse().x - anchor.x;
-			int height = cvui::mouse().y - anchor.y;
-			roi.x = width < 0 ? anchor.x + width : anchor.x;
-			roi.y = height < 0 ? anchor.y + height : anchor.y;
-			roi.width = std::abs(width);
-			roi.height = std::abs(height);
-			
-			// Show the roi coordinates and size
-			cvui::printf(image, roi.x + 5, roi.y + 5, 0.3, color, "(%d,%d)", roi.x, roi.y);
-			cvui::printf(image, cvui::mouse().x + 5, cvui::mouse().y + 5, 0.3, color, "w:%d, h:%d", roi.width, roi.height);
-		}
-		// Ensure ROI is within bounds
-		roi.x = roi.x < 0 ? 0 : roi.x;
-		roi.y = roi.y < 0 ? 0 : roi.y;
-		roi.width = roi.x + roi.width > image.cols ? roi.width + image.cols - (roi.x + roi.width) : roi.width;
-		roi.height = roi.y + roi.height > image.rows ? roi.height + image.rows - (roi.y + roi.height) : roi.height;
-		// If the ROI is valid, render it in the frame and show in a window.
-		if (roi.area() > 0) {
-			if (button==0)
+
+
+	cv::Point& anchor = anchors[button];
+	cv::Rect& roi = rois[button];
+	unsigned int color = colors[button];
+	if (cvui::mouse(0, cvui::DOWN)) {
+		anchor.x = cvui::mouse().x;
+		anchor.y = cvui::mouse().y;
+	}
+	// Is any mouse button down (pressed)?
+	if (cvui::mouse(0, cvui::IS_DOWN)) {
+		// Adjust roi dimensions according to mouse pointer
+		int width = cvui::mouse().x - anchor.x;
+		int height = cvui::mouse().y - anchor.y;
+		roi.x = width < 0 ? anchor.x + width : anchor.x;
+		roi.y = height < 0 ? anchor.y + height : anchor.y;
+		roi.width = std::abs(width);
+		roi.height = std::abs(height);
+
+		// Show the roi coordinates and size
+		cvui::printf(image, roi.x + 5, roi.y + 5, 0.3, color, "(%d,%d)", roi.x, roi.y);
+		cvui::printf(image, cvui::mouse().x + 5, cvui::mouse().y + 5, 0.3, color, "w:%d, h:%d", roi.width, roi.height);
+	}
+	// Ensure ROI is within bounds
+	roi.x = roi.x < 0 ? 0 : roi.x;
+	roi.y = roi.y < 0 ? 0 : roi.y;
+	roi.width = roi.x + roi.width > image.cols ? roi.width + image.cols - (roi.x + roi.width) : roi.width;
+	roi.height = roi.y + roi.height > image.rows ? roi.height + image.rows - (roi.y + roi.height) : roi.height;
+	// If the ROI is valid, render it in the frame and show in a window.
+	if (roi.area() > 0) {
+		if (button == 0)
 			recArea = roi;
-			if (button ==2)
-				recTrigger= roi;
-			cvui::rect(image, roi.x, roi.y, roi.width, roi.height, color);
-			cvui::printf(image, roi.x + 5, roi.y - 10, 0.3, color, "Area %d", button);
-			//cv::imshow("ROI button" + std::to_string(button), frame(roi));
-		}
-	
+		if (button == 2)
+			recTrigger = roi;
+		Mat frame1;
+		cap >> frame1;
+		if (frame1.cols != 0)
+			szCCD = frame1.size();
+		ScanRecTrigger();
+		cvui::rect(image, roi.x, roi.y, roi.width, roi.height, color);
+		cvui::printf(image, roi.x + 5, roi.y - 10, 0.3, color, "Area %d", button);
+		//cv::imshow("ROI button" + std::to_string(button), frame(roi));
+	}
+
 }
 #pragma region GUI
 void GetDesktopResolution(int& horizontal, int& vertical)
@@ -178,8 +200,8 @@ void fFilter(Mat frame)
 		grcanny.begin(frame);
 		if (!grcanny.isMinimized()) {
 			cvui::beginRow(-1, -1, 50);
-			cvui::checkbox("view", &ck21, 0x1cbaf6);
-			cvui::checkbox("using", &ck22);//, 0xff0000);
+			cvui::checkbox("view", &ck31, 0x1cbaf6);
+			cvui::checkbox("using", &ck32);//, 0xff0000);
 			cvui::endRow();
 			cvui::space(10);
 			cvui::text("Size Close", 0.4, 0x8ccbfb);
@@ -207,10 +229,10 @@ void fFilter(Mat frame)
 			cvui::space(10);
 			cvui::beginColumn(-1, -1, 6);
 			cvui::text("Type", 0.5, 0x148ae3);
-			
+
 			cvui::trackbar(180, &szThreshW, 1., 4., 2, "%.0Lf", cvui::TRACKBAR_DISCRETE | cvui::TRACKBAR_HIDE_SEGMENT_LABELS, 1.0);
 			cvui::text("Value Min", 0.5, 0x148ae3);
-			cvui::trackbar(180, &minBinary, 0., 255., 1, "%.0Lf", cvui::TRACKBAR_DISCRETE | cvui::TRACKBAR_HIDE_SEGMENT_LABELS, 1.0);
+			cvui::trackbar(180, &szThreshW, 0., 255., 1, "%.0Lf", cvui::TRACKBAR_DISCRETE | cvui::TRACKBAR_HIDE_SEGMENT_LABELS, 1.0);
 			cvui::endColumn();
 		}
 		grbinary.end();
@@ -231,8 +253,8 @@ void fFilter(Mat frame)
 			cvui::endRow();
 			cvui::space(5);
 			cvui::beginRow(-1, -1, 5);
-			cvui::counter(&szRectX, 1, "%.0f");
-			cvui::counter(&szRectY, 1, "%.0f");
+			cvui::counter(&szRectW, 1, "%.0f");
+			cvui::counter(&szRectH, 1, "%.0f");
 			cvui::endRow();
 			//
 			cvui::space(10);
@@ -244,8 +266,8 @@ void fFilter(Mat frame)
 			cvui::endRow();
 			cvui::space(5);
 			cvui::beginRow(-1, -1, 5);
-			cvui::counter(&szKenelX, 1, "%.0f");
-			cvui::counter(&szKenelY, 1, "%.0f");
+			cvui::counter(&szKernelW, 1, "%.0f");
+			cvui::counter(&szKernelH, 1, "%.0f");
 			cvui::endRow();
 			//
 			cvui::space(10);
@@ -257,8 +279,8 @@ void fFilter(Mat frame)
 			cvui::endRow();
 			cvui::space(5);
 			cvui::beginRow(-1, -1, 5);
-			cvui::counter(&szBlurX, 1, "%.0f");
-			cvui::counter(&szBlurY, 1, "%.0f");
+			cvui::counter(&szBlurW, 1, "%.0f");
+			cvui::counter(&szBlurH, 1, "%.0f");
 			cvui::endRow();
 		}
 		grBlur.end();
@@ -295,6 +317,7 @@ void fTool(Mat frame)
 		grSampling.begin(frame);
 		if (!grSampling.isMinimized()) {
 			cvui::beginRow(-1, -1, 0);
+		
 			//cvui::image(frFilter);
 			cvui::space(10);
 			cvui::beginColumn(-1, -1, 5);
@@ -303,7 +326,7 @@ void fTool(Mat frame)
 			cvui::counter(&szRectX, 1, "%.0f");
 			cvui::space(5);
 			cvui::button(90, 40, "Crop");
-			
+
 			cvui::endColumn();
 			cvui::endRow();
 			cvui::space(5);
@@ -313,7 +336,7 @@ void fTool(Mat frame)
 		grCropTrigger.begin(frame);
 		if (!grCropTrigger.isMinimized()) {
 
-			
+
 			cvui::text("Crop Area", 0.4, 0x8ccbfb);
 			cvui::space(10);
 			cvui::beginRow(-1, -1, 10);
@@ -351,7 +374,7 @@ void fTool(Mat frame)
 			cvui::endRow();
 			cvui::space(10);
 			cvui::text("Crop Trigger", 0.4, 0x8ccbfb);
-			
+
 			cvui::space(10);
 			cvui::beginRow(-1, -1, 10);
 			cvui::space(5);
@@ -373,9 +396,14 @@ void fTool(Mat frame)
 			cvui::endRow();
 			string btnCropTrigger = "";
 			if (blCropTrigger == false)
+			{
 				btnCropTrigger = "CROP Trigger";
+				
+			}
+				
 			else
 			{
+				
 				btnCropTrigger = "CROPPING";
 			}
 			//cvui::space(5);
@@ -384,7 +412,7 @@ void fTool(Mat frame)
 				blCropTrigger = !blCropTrigger;
 				blCropArea = false;
 			}
-			
+
 			cvui::endColumn();
 			cvui::endRow();
 		}
@@ -461,12 +489,13 @@ bool ck4 = true;
 Mat matTrigger;
 Mat  image;
 bool blLoad = false;
-VideoCapture cap(0);
+
 bool blCap = false;
 bool blCCD = false;
 double fps = 0;
 time_t start = 0;
 time_t  tEnd = 0;
+
 #pragma endregion
 #pragma region Function
 
@@ -476,10 +505,10 @@ public: int x = 0, y = 0, del = 0;
 public: bool rev;
 public:	void list(int _x, int _y, int _del, bool _rev) {
 
-	x = _x;
-	y = _y;
-	del = _del;
-	rev = _rev;
+			x = _x;
+			y = _y;
+			del = _del;
+			rev = _rev;
 }
 };
 vector<Result> listResult;
@@ -820,7 +849,7 @@ Mat ClearBlob(Mat inPut, cv::Size szRect, cv::Size szKernel, cv::Size szBlur, bo
 	// Specify size on horizontal axis
 	int verticalsize = vertical.rows / szRect.height;
 	// Create structure element for extracting vertical lines through morphology operations
-	Mat verticalStructure = getStructuringElement(MORPH_RECT, cv::Size(szRect.width, verticalsize));
+	Mat verticalStructure = getStructuringElement(MORPH_RECT, cv::Size(1, 5));
 	// Apply morphology operations
 	erode(vertical, vertical, verticalStructure, cv::Point(-1, -1));
 	dilate(vertical, vertical, verticalStructure, cv::Point(-1, -1));
@@ -875,6 +904,7 @@ Mat Canny(Mat inPut, cv::Size szCanny, bool ck)
 	return outPut;
 }
 #pragma endregion
+
 #pragma region FILTERs
 Mat Filter(Mat input, int  szRectW, int  szRectH, int szKernelW, int szKernelH, int szBlurW, int szBlurH, int szThreshW, int szThreshH, int szClose_x, int szClose_y, bool ck1, bool ck2, bool ck3, bool ck4)
 {
@@ -889,6 +919,11 @@ Mat Filter(Mat input, int  szRectW, int  szRectH, int szKernelW, int szKernelH, 
 	Mat	a = ClearBlob(hsv, convertSZ(szRectW, szRectH), convertSZ(szKernelW, szKernelH), convertSZ(szBlurW, szBlurH), ck2);
 	Mat	b = Thresh_binary(a, convertSZ(szThreshW, szThreshH), ck3);
 	Mat c = Canny(b, convertSZ(szClose_x, szClose_y), ck4);
+	
+	//cvui::image(image, 300, 100, a);
+	//a.copyTo(frCap);
+	b.copyTo(matBinary);
+	c.copyTo(matCanny);
 	return c;
 }
 Mat Filter2(Mat input, int  szRectW, int  szRectH, int szKernelW, int szKernelH, int szBlurW, int szBlurH, int szThreshW, int szThreshH, bool ck1, bool ck2, bool ck3)
@@ -898,9 +933,9 @@ Mat Filter2(Mat input, int  szRectW, int  szRectH, int szKernelW, int szKernelH,
 	hsv = NULL;
 	cvtColor(input, hsv, COLOR_BGR2GRAY);
 	if (ck1 == true)	imshow("GRAY", hsv);
-	hue.create(hsv.size(), hsv.depth());
-	int ch[] = { 0, 0 };
-	mixChannels(&hsv, 1, &hue, 1, ch, 1);
+//	hue.create(hsv.size(), hsv.depth());
+	//int ch[] = { 0, 0 };
+	//mixChannels(&hsv, 1, &hue, 1, ch, 1);
 	Mat	a = ClearBlob(hsv, convertSZ(szRectW, szRectH), convertSZ(szKernelW, szKernelH), convertSZ(szBlurW, szBlurH), ck2);
 	Mat	b = Thresh_binary(a, convertSZ(szThreshW, szThreshH), ck3);
 	return b;
@@ -1210,7 +1245,7 @@ Mat FindContours(Mat input, Mat raw, double minArea, double maxArea, int szSampl
 
 			angle = round(angle);
 			Result res;
-			
+
 			res.list(pHut.x, pHut.y, angle, true);
 			listResult.push_back(res);
 			//result += to_string(pHut.x) + "," + to_string(pHut.y) + ",0" + "," + to_string(angle) + "\n";
@@ -1257,7 +1292,7 @@ Mat FindContours(Mat input, Mat raw, double minArea, double maxArea, int szSampl
 
 		}
 	}
-	//imshow("Result", outPut);
+	imshow("Result", raw);
 
 
 	return raw;
@@ -1297,28 +1332,31 @@ bool blTrigDone = false;
 vector<Mat> lis_frTrigger;
 double minAreaTrigger = 10000000000000;
 Mat raw;
+
 double minArea, maxArea;
 int szSampling;
 void fcContour()
 {
-	if (lis_frTrigger.size() !=0)
+	if (lis_frTrigger.size() != 0)
 	{
-		
+
 		//cv::Mat fCrop = in.clone();
-	Mat	fCrop = lis_frTrigger[0](recArea);
-	Mat frFil=Filter(fCrop, szRectW, szRectH, szKernelW, szKernelH, szBlurW, szBlurH, szThreshW, szThreshH,szCloseW,szCloseH, ck1, ck2, ck3,ck4);
-	FindContours(frFil, lis_frTrigger[0], minArea, maxArea, szSampling, recArea.x, recArea.y);
-	lis_frTrigger.erase(lis_frTrigger.begin());
+		Mat	fCrop = lis_frTrigger[0](recArea);
+		Mat frFil = Filter(fCrop, szRectW, szRectH, szKernelW, szKernelH, szBlurW, szBlurH, szThreshW, szThreshH, szCloseW, szCloseH, ck1, ck2, ck3, ck4);
+		FindContours(frFil, lis_frTrigger[0], minArea, maxArea, szSampling, recArea.x, recArea.y);
+		lis_frTrigger.erase(lis_frTrigger.begin());
 	}
 }
 
 void fcTrigger()
 {
 	int64 t0 = cv::getTickCount();
-	cap >> frame;	
+	cap >> frame;
 	frame.copyTo(frCap);
-	cv::Mat fCrop = frCap(recTrigger);
-	matTrigger = Filter2(fCrop, szRectW, szRectH, szKernelW, szKernelH, szBlurW, szBlurH, szThreshW, szThreshH, ck1, ck2, ck3);
+	cv::Mat fCrop = frCap(recTrigger2);
+	matTrigger =  Filter(fCrop, szRectW, szRectH, szKernelW, szKernelH, szBlurW, szBlurH, szThreshW, szThreshH, szCloseW, szCloseH, ck1, ck2, ck3, ck4);
+//	matTrigger = Filter2(fCrop, 0, 2, 1, 6, 1, 6, szThreshW, szThreshH, ck1, ck2, ck3);
+	FindContours(matTrigger, frCap, 4000, 60000, szSampling, recTrigger2.x, recTrigger2.y);
 	//Mat  out(matTrigger, cv::Rect(10, 10,
 	//	200, 200));
 	//areaTriger = countNonZero(in);//cv::Mat::zeros(matTrigger.size(), CV_8UC3);
@@ -1332,12 +1370,12 @@ void fcTrigger()
 		matTrigger.copyTo(frCap);
 	}
 	int64 t1 = cv::getTickCount();
-	
+
 	cycleTrigger = (t1 - t0) / cv::getTickFrequency();
 }
 void pTrigger()
 {
-	
+
 	thread process1(fcTrigger);
 	if (process1.joinable())
 	{
@@ -1351,7 +1389,7 @@ void pTrigger()
 	}
 }
 void pFindContour()
-{	
+{
 	thread process2(fcContour);
 	if (process2.joinable())
 	{
@@ -1380,6 +1418,7 @@ int main(int argc, const char *argv[])
 {
 	recArea = cv::Rect(0, 0, 300, 300);
 	recTrigger = cv::Rect(0, 0, 300, 300);
+	recTrigger2 = cv::Rect(259, 57, 203, 390);
 	//int i = listResult[0].x;
 	//int i = 0;
 	/*while (true)
@@ -1411,14 +1450,19 @@ int main(int argc, const char *argv[])
 	int h = 0;
 	int w = 0;
 	frCap = cv::Mat(3 * with / 4, height, CV_8UC3);
+	matClear = cv::Mat(recTrigger2.width, recTrigger2.height, CV_8UC3);
 	//cap.set(CV_CAP_PROP_POS_FRAMES, 100);
 	//cap.set(CV_CAP_PROP_FRAME_HEIGHT, 100);
 	while (true) {
 		frFilter = cv::Scalar(255, 255, 255);
+		image = cv::Scalar(255, 255, 255);
+		cvui::context(wMain);
 		time(&start);
 		if (blRun == true)
 		{
 			pTrigger();
+			//if (frCap.cols != 0)
+			//	cvui::image(image, recTrigger.x, recTrigger.y, frCap);
 		}
 		{
 			if (blRecord == true)
@@ -1427,6 +1471,7 @@ int main(int argc, const char *argv[])
 				if (frame.empty())
 					break;
 				frame.copyTo(frCap);
+		
 				
 			}
 			else if (blCap == true)
@@ -1436,6 +1481,8 @@ int main(int argc, const char *argv[])
 					break;
 				blCap = !blCap;
 				frame.copyTo(frCap);
+				cv::Mat fCrop = frCap(recTrigger2);
+				matTrigger = Filter(fCrop, szRectW, szRectH, szKernelW, szKernelH, szBlurW, szBlurH, szThreshW, szThreshH, szCloseW, szCloseH, ck1, ck2, ck3, ck4);
 
 			}
 			if (frCap.cols == 0)
@@ -1445,62 +1492,89 @@ int main(int argc, const char *argv[])
 		}
 		time(&tEnd);
 		fps = difftime(tEnd, start);;
-		image = cv::Scalar(255, 255, 255);
+		//cv::Mat fCrop = frCap(recTrigger2);
 		cv::resize(frCap, frCap, cv::Size(3 * with / 4, height), 0, 0, CV_INTER_LINEAR);
-		cvui::context(wMain);
+		szPic = frCap.size();
+		if (matBinary.cols != 0)
+		{
+
+			Mat frame1;
+			if (ck21 == true)
+			{
+				matBinary.copyTo(frame1);
+				cvui::image(image, with / 2, 0, frame1);
+			}
+				
+			//if (ck31 == true)
+				//cvui::image(image, with / 2, 0, matCanny);
+		}
+		
+		
 		cvui::image(image, 0, 0, frCap);
+		if (matBinary.cols != 0)
+		{
+			cv::resize(matBinary, matBinary, cv::Size(3 * with / 4, height), 0, 0, CV_INTER_LINEAR);
+		}
+		//if (ck21 == true)
+			//	cvui::image(image,0, 0, matBinary);
+		//	if (ck31 == true)
+		//	cvui::image(image, 0, 0, matCanny);
+		//cvui::image(image, 0, 0, fCrop);
 		fResult(image);
 		if (blCropArea == true)
 		{
-			Crop(image,0);
+			Crop(image, 0);
 		}
 		if (blCropTrigger == true)
 		{
-			Crop(image,2);
+			Crop(image, 2);
 		}
-	
-		cvui::text(image, with / 6, 60, "AREA  " + to_string(areaTriger) + "px", 0.42, 0x0c8108);
-		cvui::text(image, with / 6, 80, "Cycle time Trigger  " + to_string(cycleTrigger) + "ms", 0.42, 0x0c8108);
+		cvui::text(image, with / 6, 60, "AREA Trigger " + to_string(recTrigger2.x) + ","
+			+ to_string(recTrigger2.y) + ","
+			+ to_string(recTrigger2.width) + ","
+			+ to_string(recTrigger2.height) + ",", 0.42, 0x0c8108);
+		cvui::text(image, with / 6, 80, "AREA  " + to_string(areaTriger) + "px", 0.42, 0x0c8108);
+		cvui::text(image, with / 6, 100, "Cycle time Trigger  " + to_string(cycleTrigger) + "ms", 0.42, 0x0c8108);
 		cvui::text(image, with / 6, 30, "FPS  " + to_string(fps) + "s", 0.36, 0xe10a0a);
 		showCrop(image);
 		if (blRecord == true)
-			if (cvui::button(image, 3 * with / 8, 9 * height / 10, 80, 30, "Stop Rec")) {
+		if (cvui::button(image, 3 * with / 8, 9 * height / 10, 80, 30, "Stop Rec")) {
 			blRecord = false;
 			goto Y;
-			}
+		}
 		if (blRecord == false)
-			if (cvui::button(image, 3 * with / 8, 9 * height / 10, 80, 30, "Rec")) {
+		if (cvui::button(image, 3 * with / 8, 9 * height / 10, 80, 30, "Rec")) {
 			blRecord = true;
-			}
-		
-			if (cvui::button(image, 3 * with / 8, 9 * height / 10+30, 80, 30, "Cap ")) 
-					{
-						blCap = !blCap;
-						blRecord = false;
-					}
+		}
+
+		if (cvui::button(image, 3 * with / 8, 9 * height / 10 + 30, 80, 30, "Cap "))
+		{
+			blCap = !blCap;
+			blRecord = false;
+		}
 	Y:if (cvui::button(image, with - 20, 0, 20, 20, "X"))
 	{
-		cv::destroyAllWindows();
-		cv::waitKey(1);
-		break;
+		  cv::destroyAllWindows();
+		  cv::waitKey(1);
+		  break;
 	}
 	  if (cvui::button(image, 110, 0, 100, 30, "OFFLINE")) {
 	  }
 	  if (blRun == true)
-		  if (cvui::button(image, 0, 0, 100, 30, "RUN")) {
+	  if (cvui::button(image, 0, 0, 100, 30, "RUN")) {
 		  blRun = false;
 		  goto X;
-		  }
+	  }
 	  if (blRun == false)
-		  if (cvui::button(image, 0, 0, 100, 30, "EDITOR")) {
+	  if (cvui::button(image, 0, 0, 100, 30, "EDITOR")) {
 		  blRun = true;
-		  }
+	  }
   X:
 	  if (blRun == false)
 	  {
 		  if (cvui::button(image, 0, 40, 100, 30, "CCD SETTING")) {
 			  blCCD = !blCCD;
-			 // cap.set(CV_CAP_PROP_SETTINGS, 1);
+			  // cap.set(CV_CAP_PROP_SETTINGS, 1);
 		  }
 		  if (cvui::button(image, 0, 70, 100, 30, "FILTER")) {
 			  blFilter = !blFilter;
@@ -1527,10 +1601,12 @@ int main(int argc, const char *argv[])
 		  }
 	  }
 	  cvui::update(wMain);
+	  if (matTrigger.cols!=0)
+	  cv::imshow("A", matTrigger);
 	  cv::imshow(wMain, image);
 	  cv::waitKey(1);
 	}
 	cv::waitKey(0);
-	
+
 	return 0;
 }
